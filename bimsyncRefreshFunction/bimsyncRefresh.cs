@@ -34,17 +34,32 @@ namespace bimsyncRefreshFunction
             if (toRefresh == "yes")
             {
                 //Find existing token
-                Token token = ReadToken();
+                TokenWithDate token = ReadToken();
 
-                //Refresh it
-                token = RefreshToken(token);
+                if (DateTime.Now - token.RefreshDate > new TimeSpan(0,59,00))
+                {
+                    //Refresh it
+                    token = RefreshToken(token);
 
-                //Write the new token
-                WriteTokenDown(token);
+                    if (token.token.access_token != null)
+                    {
+                        //Write the new token
+                        WriteTokenDown(token);
 
-                log.Info("The token is now refreshed.");
+                        log.Info("The token is now refreshed.");
 
-                return req.CreateResponse(HttpStatusCode.OK, token.access_token);
+                        return req.CreateResponse(HttpStatusCode.OK, token.token.access_token);
+                    }
+                    else
+                    {
+                        return req.CreateResponse(HttpStatusCode.InternalServerError, "Error while fetching the token");
+                    }
+                }
+                else
+                {
+                    //Return the current token, still valid
+                    return req.CreateResponse(HttpStatusCode.OK, token.token.access_token);
+                }
             }
             else if (toRefresh == "start")
             {
@@ -58,27 +73,24 @@ namespace bimsyncRefreshFunction
             }
         }
 
-        //        {
-        //    "access_token": "YhYQmAMsSpui1khsiEywOI",
-        //    "token_type": "bearer",
-        //    "expires_in": 3599,
-        //    "refresh_token": "0QfjCrP2f6pDmFJ1U591wp"
-        //}
-
         private static void WriteTokenTemp()
         {
             Token token = new Token();
 
-            token.access_token = "vV9zinLDYd5i5BDwan5dZX";
+            token.access_token = "ZqySL9w2TQbK3JlWWhaj3e";
             token.token_type = "bearer";
             token.expires_in = 3599;
-            token.refresh_token = "553jJJOyZPtwS5a3hQCOI2";
+            token.refresh_token = "LdPPorAWIENjMTYyEMOwak";
 
-            WriteTokenDown(token);
+            TokenWithDate tokenWithDate = new TokenWithDate();
+            tokenWithDate.token = token;
+            tokenWithDate.RefreshDate = DateTime.Now - new TimeSpan(0,58,0);
+
+            WriteTokenDown(tokenWithDate);
         }
 
 
-        private static Token RefreshToken(Token token)
+        private static TokenWithDate RefreshToken(TokenWithDate token)
         {
 
             string client_id = ConfigurationManager.AppSettings["client_id"];
@@ -92,7 +104,7 @@ namespace bimsyncRefreshFunction
             RestRequest refrechTokenRequest = new RestRequest("oauth2/token", Method.POST);
             //refrechTokenRequest.AddHeader("Authorization", "Bearer " + token.access_token);
 
-            refrechTokenRequest.AddParameter("refresh_token", token.refresh_token);
+            refrechTokenRequest.AddParameter("refresh_token", token.token.refresh_token);
             refrechTokenRequest.AddParameter("grant_type", "refresh_token");
             refrechTokenRequest.AddParameter("client_id", client_id);
             refrechTokenRequest.AddParameter("client_secret", client_secret);
@@ -102,13 +114,16 @@ namespace bimsyncRefreshFunction
             if (responseToken.ErrorException != null)
             {
                 string message = "Error retrieving your access token. " + responseToken.ErrorException.Message;
-                return new Token();
+                return new TokenWithDate();
             }
 
-            return responseToken.Data;
+            TokenWithDate newToken = new TokenWithDate();
+            newToken.token = responseToken.Data;
+            newToken.RefreshDate = DateTime.Now;
+            return newToken;
         }
 
-        private static void WriteTokenDown(Token token)
+        private static void WriteTokenDown(TokenWithDate token)
         {
             var folder = Environment.ExpandEnvironmentVariables(@"%HOME%\data\MyFunctionAppData");
             var fullPath = Path.Combine(folder, "tokenFile.txt");
@@ -117,7 +132,7 @@ namespace bimsyncRefreshFunction
             TextWriter writer = null;
             try
             {
-                var serializer = new XmlSerializer(typeof(Token));
+                var serializer = new XmlSerializer(typeof(TokenWithDate));
                 writer = new StreamWriter(fullPath, false);
                 serializer.Serialize(writer, token);
             }
@@ -128,7 +143,7 @@ namespace bimsyncRefreshFunction
             }
         }
 
-        private static Token ReadToken()
+        private static TokenWithDate ReadToken()
         {
             var folder = Environment.ExpandEnvironmentVariables(@"%HOME%\data\MyFunctionAppData");
             var fullPath = Path.Combine(folder, "tokenFile.txt");
@@ -137,9 +152,9 @@ namespace bimsyncRefreshFunction
             TextReader reader = null;
             try
             {
-                var serializer = new XmlSerializer(typeof(Token));
+                var serializer = new XmlSerializer(typeof(TokenWithDate));
                 reader = new StreamReader(fullPath);
-                return (Token)serializer.Deserialize(reader);
+                return (TokenWithDate)serializer.Deserialize(reader);
             }
             finally
             {
@@ -157,5 +172,12 @@ namespace bimsyncRefreshFunction
         public string token_type { get; set; }
         public int expires_in { get; set; }
         public string refresh_token { get; set; }
+        
+    }
+
+    public class TokenWithDate
+    {
+        public Token token { get; set; }
+        public DateTime RefreshDate { get; set; }
     }
 }
