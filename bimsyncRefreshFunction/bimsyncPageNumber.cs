@@ -1,3 +1,5 @@
+//#define TEST
+
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -32,15 +34,21 @@ namespace bimsyncRefreshFunction
                 req.CreateResponse(HttpStatusCode.OK, "Please provide a bimsync API ressource to get the page number");
             }
 
-            //Get the token
-            TokenWithDate token = GetToken();
-            //string accessToken = ConfigurationManager.AppSettings["tempaccessToken"];
             string pageNumber = null;
 
+
+#if TEST
+            string accessToken = ConfigurationManager.AppSettings["tempaccessToken"];
+            pageNumber = GetPageNumber(ressource, revision, accessToken);
+#else
+            //Get the token
+            TokenWithDate token = GetToken();
             if (token != null)
             {
                 pageNumber = GetPageNumber(ressource, revision, token.token.access_token);
             }
+#endif
+
 
             return pageNumber == null
                 ? req.CreateResponse(HttpStatusCode.InternalServerError, "Something went wrong while fetching your page number")
@@ -49,7 +57,7 @@ namespace bimsyncRefreshFunction
 
         private static string GetPageNumber(string ressource, string revision, string access_token)
         {
-            RestClient client = new RestClient("https://api.bimsync.com/v2/");
+            RestClient client = new RestClient("https://api.bimsync.com");
 
             //Get a generic ressource with only one item
             RestRequest genericRequest = new RestRequest(ressource, Method.GET);
@@ -60,11 +68,14 @@ namespace bimsyncRefreshFunction
 
             IRestResponse response = client.Execute(genericRequest);
 
+            //Check for empty results
+            if (response.Content.Length < 3) return "0";
+
             // parse response headers
             Parameter link = response.Headers
                 .FirstOrDefault(q => string.Compare(q.Name, "Link", true) == 0);
 
-            if (link == null) return null;
+            if (link == null) return "999";
 
             string linkValue = link.Value.ToString();
             string[] values = linkValue.Split(',');
