@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bimsyncRefreshFunction", "bimsyncRefreshFunction\bimsyncRefreshFunction.csproj", "{66D47F5C-142F-4750-8E24-0F2CC6E50723}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bimsyncRefreshFunction", "bimsyncRefreshFunction\bimsyncRefreshFunction.csproj", "{66D47F5C-142F-4750-8E24-0F2CC6E50723}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

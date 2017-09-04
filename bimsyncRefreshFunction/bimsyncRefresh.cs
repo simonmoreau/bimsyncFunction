@@ -77,10 +77,10 @@ namespace bimsyncRefreshFunction
         {
             Token token = new Token();
 
-            token.access_token = "ZqySL9w2TQbK3JlWWhaj3e";
+            token.access_token = "P3tbiwGZwgyPQtnRbWuw8x";
             token.token_type = "bearer";
             token.expires_in = 3599;
-            token.refresh_token = "LdPPorAWIENjMTYyEMOwak";
+            token.refresh_token = "HlIEh7o1nFjuYEjUlZZysn";
 
             TokenWithDate tokenWithDate = new TokenWithDate();
             tokenWithDate.token = token;
@@ -90,7 +90,7 @@ namespace bimsyncRefreshFunction
         }
 
 
-        private static TokenWithDate RefreshToken(TokenWithDate token)
+        public static TokenWithDate RefreshToken(TokenWithDate token)
         {
 
             string client_id = ConfigurationManager.AppSettings["client_id"];
@@ -123,7 +123,7 @@ namespace bimsyncRefreshFunction
             return newToken;
         }
 
-        private static void WriteTokenDown(TokenWithDate token)
+        public static void WriteTokenDown(TokenWithDate token)
         {
             var folder = Environment.ExpandEnvironmentVariables(@"%HOME%\data\MyFunctionAppData");
             var fullPath = Path.Combine(folder, "tokenFile.txt");
@@ -143,7 +143,7 @@ namespace bimsyncRefreshFunction
             }
         }
 
-        private static TokenWithDate ReadToken()
+        public static TokenWithDate ReadToken()
         {
             var folder = Environment.ExpandEnvironmentVariables(@"%HOME%\data\MyFunctionAppData");
             var fullPath = Path.Combine(folder, "tokenFile.txt");
