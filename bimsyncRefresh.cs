@@ -8,22 +8,28 @@ using System.Configuration;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
-using RestSharp;
 using System.Xml.Serialization;
+using Microsoft.Extensions.Configuration;
 
-namespace bimsyncRefreshFunction
+namespace bimsync
 {
     public static class bimsyncRefresh
     {
         [FunctionName("bimsyncRefresh")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
+        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log, ExecutionContext context)
         {
             log.Info("C# HTTP trigger function processed a request.");
 
+                        IConfigurationRoot configRoot = new ConfigurationBuilder()
+    .SetBasePath(context.FunctionAppDirectory)
+    .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .Build();
+
             // parse query parameter
-            string toRefresh = req.GetQueryNameValuePairs()
+            string toRefresh = req.Properties
                 .FirstOrDefault(q => string.Compare(q.Key, "refresh", true) == 0)
-                .Value;
+                .Value.ToString();
 
             // Get request body
             dynamic data = await req.Content.ReadAsAsync<object>();
@@ -90,19 +96,22 @@ namespace bimsyncRefreshFunction
         }
 
 
-        public static TokenWithDate RefreshToken(TokenWithDate token)
+        public static TokenWithDate RefreshToken(TokenWithDate token,IConfigurationRoot configRoot)
         {
 
-            string client_id = ConfigurationManager.AppSettings["client_id"];
-            string client_secret = ConfigurationManager.AppSettings["client_secret"];
+            string client_id = configRoot["client_id"];
+            string client_secret = configRoot["client_secret"];
             //string client_id = GetEnvironmentVariable("client_id", EnvironmentVariableTarget.Process);
             //string client_secret = GetEnvironmentVariable("client_secret", EnvironmentVariableTarget.Process);
 
-            RestClient client = new RestClient("https://api.bimsync.com");
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new System.Uri("https://api.bimsync.com");
 
             //Refresh token
             RestRequest refrechTokenRequest = new RestRequest("oauth2/token", Method.POST);
             //refrechTokenRequest.AddHeader("Authorization", "Bearer " + token.access_token);
+
+            HttpWebRequest request = new HttpWebRequest();
 
             refrechTokenRequest.AddParameter("refresh_token", token.token.refresh_token);
             refrechTokenRequest.AddParameter("grant_type", "refresh_token");

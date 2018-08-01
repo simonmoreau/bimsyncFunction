@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
-using RestSharp;
 using System;
 using System.Configuration;
 
-namespace bimsyncRefreshFunction
+namespace bimsync
 {
     public static class bimsyncPageNumber
     {
