@@ -10,6 +10,10 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
+using System.Text;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Runtime.Serialization.Json;
 
 namespace bimsync
 {
@@ -45,7 +49,7 @@ namespace bimsync
                 if (DateTime.Now - token.RefreshDate > new TimeSpan(0,59,00))
                 {
                     //Refresh it
-                    token = RefreshToken(token);
+                    token = RefreshToken(token, configRoot).Result;
 
                     if (token.token.access_token != null)
                     {
@@ -81,7 +85,7 @@ namespace bimsync
 
         private static void WriteTokenTemp()
         {
-            Token token = new Token();
+            AuthToken token = new AuthToken();
 
             token.access_token = "P3tbiwGZwgyPQtnRbWuw8x";
             token.token_type = "bearer";
@@ -96,9 +100,8 @@ namespace bimsync
         }
 
 
-        public static TokenWithDate RefreshToken(TokenWithDate token,IConfigurationRoot configRoot)
+        public static async Task<TokenWithDate> RefreshToken(TokenWithDate token,IConfigurationRoot configRoot)
         {
-
             string client_id = configRoot["client_id"];
             string client_secret = configRoot["client_secret"];
             //string client_id = GetEnvironmentVariable("client_id", EnvironmentVariableTarget.Process);
@@ -107,27 +110,23 @@ namespace bimsync
             HttpClient client = new HttpClient();
             client.BaseAddress = new System.Uri("https://api.bimsync.com");
 
-            //Refresh token
-            RestRequest refrechTokenRequest = new RestRequest("oauth2/token", Method.POST);
-            //refrechTokenRequest.AddHeader("Authorization", "Bearer " + token.access_token);
+            object requestBody = new {
+                 refresh_token = token.token.refresh_token, 
+                 grant_type = "refresh_token",
+                 client_id = client_id,
+                 client_secret = client_secret };
 
-            HttpWebRequest request = new HttpWebRequest();
+            string jsonInString = JsonConvert.SerializeObject(requestBody);
+            HttpContent content = new StringContent(jsonInString, Encoding.UTF8, "application/x-www-form-urlencoded");
+            HttpResponseMessage responseMessage = await client.PostAsync("oauth2/token", content);
 
-            refrechTokenRequest.AddParameter("refresh_token", token.token.refresh_token);
-            refrechTokenRequest.AddParameter("grant_type", "refresh_token");
-            refrechTokenRequest.AddParameter("client_id", client_id);
-            refrechTokenRequest.AddParameter("client_secret", client_secret);
-
-            IRestResponse<Token> responseToken = client.Execute<Token>(refrechTokenRequest);
-
-            if (responseToken.ErrorException != null)
-            {
-                string message = "Error retrieving your access token. " + responseToken.ErrorException.Message;
-                return new TokenWithDate();
-            }
+            responseMessage.EnsureSuccessStatusCode();
+            Stream responseStream = await responseMessage.Content.ReadAsStreamAsync();
+            DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(AuthToken));
+            AuthToken authToken = (AuthToken)jsonSerializer.ReadObject(responseStream);
 
             TokenWithDate newToken = new TokenWithDate();
-            newToken.token = responseToken.Data;
+            newToken.token = authToken;
             newToken.RefreshDate = DateTime.Now;
             return newToken;
         }
@@ -174,8 +173,7 @@ namespace bimsync
 
     }
 
-    [SettingsSerializeAs(SettingsSerializeAs.Xml)]
-    public class Token
+    public class AuthToken
     {
         public string access_token { get; set; }
         public string token_type { get; set; }
@@ -186,7 +184,7 @@ namespace bimsync
 
     public class TokenWithDate
     {
-        public Token token { get; set; }
+        public AuthToken token { get; set; }
         public DateTime RefreshDate { get; set; }
     }
 }
