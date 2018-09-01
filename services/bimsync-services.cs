@@ -40,9 +40,8 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<AccessToken> RefreshAccessToken(string refresh_token)
         {
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
             string bodyContent = $"grant_type=refresh_token" +
                     $"&refresh_token={refresh_token}" +
@@ -53,7 +52,7 @@ namespace bimsyncFunction.bimsync
 
             string clientURL = "https://api.bimsync.com/oauth2/token";
 
-            HttpResponseMessage response = await client.PostAsync(clientURL, body);
+            HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
             response.EnsureSuccessStatusCode();
 
@@ -63,10 +62,9 @@ namespace bimsyncFunction.bimsync
             return accessToken;
         }
 
-        private async Task<BCFToken> GetBCFToken(string authorisationCode)
+        public static async Task<BCFToken> GetBCFToken(string authorisationCode)
         {
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
 
             string bodyContent = $"client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
                     $"&client_secret={Services.GetEnvironmentVariable("bimsync-secret")}" +
@@ -77,7 +75,7 @@ namespace bimsyncFunction.bimsync
 
             string clientURL = "https://api.bimsync.com/1.0/oauth/access_token";
 
-            HttpResponseMessage response = await client.PostAsync(clientURL, body);
+            HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
             response.EnsureSuccessStatusCode();
 
@@ -89,11 +87,10 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<bimsync.User> GetCurrentUser(AccessToken accessToken)
         {
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
-            HttpResponseMessage response = await client.GetAsync("https://api.bimsync.com/v2/user");
+            HttpResponseMessage response = await httpClient.GetAsync("https://api.bimsync.com/v2/user");
 
             response.EnsureSuccessStatusCode();
 
@@ -105,10 +102,8 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<int> GetPageNumber(string ressource, string revision, string access_token)
         {
-            HttpClient client = new HttpClient();
-            //client.BaseAddress = new Uri("https://api.bimsync.com/v2/");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
 
             string query = "https://api.bimsync.com/v2/";
             if (ressource.Contains("?"))
@@ -121,7 +116,7 @@ namespace bimsyncFunction.bimsync
             }
             if (revision != null && revision != "") query = query + "&revision=" + revision;
 
-            HttpResponseMessage response = await client.GetAsync(query);
+            HttpResponseMessage response = await httpClient.GetAsync(query);
 
             string responseString = await response.Content.ReadAsStringAsync();
 
@@ -154,5 +149,29 @@ namespace bimsyncFunction.bimsync
 
             return Convert.ToInt32(result);
         }
+
+        public static async Task<ViewerToken> Viewer2dToken(AccessToken accessToken, string projectId, string revisionId)
+        {
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
+
+            HttpContent body = new StringContent("", System.Text.Encoding.UTF8, "application/json");
+
+            string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/viewer2d/token";
+
+            if (!string.IsNullOrEmpty(revisionId)){
+                clientURL = clientURL + $"?revision={revisionId}";
+            }
+
+            HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
+
+            response.EnsureSuccessStatusCode();
+
+            string responseString = await response.Content.ReadAsStringAsync();
+            ViewerToken viewerToken = (ViewerToken)JsonConvert.DeserializeObject(responseString, typeof(ViewerToken));
+
+            return viewerToken;
+        }
+
     }
 }

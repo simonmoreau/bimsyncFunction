@@ -54,4 +54,10 @@ namespace bimsyncFunction.bimsync
         public string token_type { get; set; }
     }
 
+    public class ViewerToken
+    {
+        public string token {get;set;}
+        public string url {get;set;}
+    }
+
 }
