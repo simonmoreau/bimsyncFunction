@@ -23,7 +23,7 @@ namespace bimsyncFunction
     {
         [FunctionName("create_user")]
         public static async Task<HttpResponseMessage> Create(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "users")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users")]HttpRequestMessage req,
             [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
@@ -70,7 +70,6 @@ namespace bimsyncFunction
                 bcfToken = existingUsers.FirstOrDefault().BCFToken;
             }
 
-
             User user = new User
             {
                 id = bimsyncUser.id,
@@ -92,7 +91,7 @@ namespace bimsyncFunction
 
         [FunctionName("get_user")]
         public static async Task<HttpResponseMessage> Get(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "users/{secret}")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}")]HttpRequestMessage req,
             [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
