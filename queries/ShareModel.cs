@@ -16,7 +16,7 @@ namespace bimsyncFunction
         [FunctionName("ShareModel")]
         public static void Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]HttpRequest req,
-            [CosmosDB("bimsyncManagerdb", "sharedModels", ConnectionStringSetting = "myDBConnectionString")]out dynamic document,
+            [CosmosDB("bimsyncManagerdb", "bimsyncManagerCollection", ConnectionStringSetting = "myDBConnectionString")]out dynamic document,
             TraceWriter log)
         {
             string name = req.Query["name"];

@@ -11,22 +11,25 @@ namespace bimsyncFunction.bimsync
         // Create a single, static HttpClient
         private static HttpClient httpClient = new HttpClient();
 
-        public static async Task<AccessToken> GetAccessToken(string authorization_code, string callbackUri)
+        public static async Task<AccessToken> GetAccessToken(string authorisationCode)
         {
+            string callbackUri = "https://www.getpostman.com/oauth2/callback";
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
             string bodyContent = $"grant_type=authorization_code" +
-                    $"&code={authorization_code}" +
+                    $"&code={authorisationCode}" +
                     $"&redirect_uri={callbackUri}" +
-                    $"&client_id={Services.GetEnvironmentVariable("client_id")}" +
-                    $"&client_secret={Services.GetEnvironmentVariable("client_secret")}";
+                    $"&client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
+                    $"&client_secret={Services.GetEnvironmentVariable("bimsync-secret")}";
 
             HttpContent body = new StringContent(bodyContent, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
 
             string clientURL = "https://api.bimsync.com/oauth2/token";
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
+
+            response.EnsureSuccessStatusCode();
 
             string responseString = await response.Content.ReadAsStringAsync();
             AccessToken accessToken = (AccessToken)JsonConvert.DeserializeObject(responseString, typeof(AccessToken));
