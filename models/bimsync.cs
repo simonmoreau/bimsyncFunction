@@ -60,4 +60,16 @@ namespace bimsyncFunction.bimsync
         public string url {get;set;}
     }
 
+    public class Product
+{
+    public string revisionId { get; set; }
+    public int objectId { get; set; }
+    public string ifcType { get; set; }
+    public object attributes { get; set; }
+    public object type { get; set; }
+    public object propertySets { get; set; }
+    public object quantitySets { get; set; }
+    public object materials { get; set; }
+}
+
 }

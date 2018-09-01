@@ -284,13 +284,13 @@ ILogger log)
             log.LogInformation("Create a shared model");
 
             // Get request body
-            AuthorisationCode authorisationCode = await req.Content.ReadAsAsync<AuthorisationCode>();
+            SharedRevisions sharedRevisions = await req.Content.ReadAsAsync<SharedRevisions>();
 
-            if (authorisationCode == null)
+            if (sharedRevisions == null)
             {
                 new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
-                    Content = new StringContent(JsonConvert.SerializeObject("Please pass an Authorisation Code and a redirect URI in the request body"), Encoding.UTF8, "application/json")
+                    Content = new StringContent(JsonConvert.SerializeObject("Please pass an array of revisions to be shared"), Encoding.UTF8, "application/json")
                 };
             }
 
@@ -316,6 +316,15 @@ ILogger log)
                     await usersOut.AddAsync(user);
                 }
 
+                bimsync.ViewerToken token2d = await bimsync.bimsyncServices.GetViewer2DToken(user.AccessToken,sharedRevisions.projectId,sharedRevisions.revision2D);
+                bimsync.ViewerToken token3d = await bimsync.bimsyncServices.GetViewer3DToken(user.AccessToken,sharedRevisions.projectId,sharedRevisions.revisions3D);
+
+                SharingCode sharingCode = new SharingCode {
+                    id = Guid.NewGuid().ToString(),
+                    Viewer2dToken = token2d,
+                    Viewer3dToken = token3d,
+                    
+                }
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(

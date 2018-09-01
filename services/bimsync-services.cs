@@ -150,7 +150,7 @@ namespace bimsyncFunction.bimsync
             return Convert.ToInt32(result);
         }
 
-        public static async Task<ViewerToken> Viewer2dToken(AccessToken accessToken, string projectId, string revisionId)
+        public static async Task<ViewerToken> GetViewer2DToken(AccessToken accessToken, string projectId, string revisionId)
         {
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
@@ -159,7 +159,8 @@ namespace bimsyncFunction.bimsync
 
             string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/viewer2d/token";
 
-            if (!string.IsNullOrEmpty(revisionId)){
+            if (!string.IsNullOrEmpty(revisionId))
+            {
                 clientURL = clientURL + $"?revision={revisionId}";
             }
 
@@ -171,6 +172,50 @@ namespace bimsyncFunction.bimsync
             ViewerToken viewerToken = (ViewerToken)JsonConvert.DeserializeObject(responseString, typeof(ViewerToken));
 
             return viewerToken;
+        }
+
+        public static async Task<ViewerToken> GetViewer3DToken(AccessToken accessToken, string projectId, string[] revisionId)
+        {
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
+
+            string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/viewer3d/token";
+
+            HttpContent body = new StringContent("", System.Text.Encoding.UTF8, "application/json");
+            if (revisionId.Count() != 0)// !string.IsNullOrEmpty(revisionId))
+            {
+                SharedRevisions3D revisions = new SharedRevisions3D { revisions = revisionId };
+                body = new StringContent(JsonConvert.SerializeObject(revisions), System.Text.Encoding.UTF8, "application/json");
+            }
+
+            HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
+
+            response.EnsureSuccessStatusCode();
+
+            string responseString = await response.Content.ReadAsStringAsync();
+            ViewerToken viewerToken = (ViewerToken)JsonConvert.DeserializeObject(responseString, typeof(ViewerToken));
+
+            return viewerToken;
+        }
+
+        public static async Task<string[]> GetSpacesIds(AccessToken accessToken, string projectId, string revision)
+        {
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
+
+            string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/ifc/products?pageSize=5000&revision={revision}";
+
+            HttpContent body = new StringContent("{'query':{'ifcType':{'$ifcType':'IfcSpace'}},'fields':{'revisionId':1,'ifcType':1,'type':1}}", System.Text.Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
+
+            response.EnsureSuccessStatusCode();
+
+            string responseString = await response.Content.ReadAsStringAsync();
+            List<Product> products = (List<Product>)JsonConvert.DeserializeObject(responseString, typeof(List<Product>));
+            string[] ids = products.Select(o => o.objectId.ToString()).ToArray();
+
+            return ids;
         }
 
     }
