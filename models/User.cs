@@ -15,4 +15,9 @@ namespace bimsyncFunction
         public string AuthorizationCode {get;set;}
         public string RedirectURI {get;set;}
     }
+
+        public class Page
+    {
+        public int PageNumber {get;set;}
+    }
 }

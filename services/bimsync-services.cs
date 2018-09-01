@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -99,6 +101,58 @@ namespace bimsyncFunction.bimsync
             bimsync.User bimsyncUser = (bimsync.User)JsonConvert.DeserializeObject(responseString, typeof(bimsync.User));
 
             return bimsyncUser;
+        }
+
+        public static async Task<int> GetPageNumber(string ressource, string revision, string access_token)
+        {
+            HttpClient client = new HttpClient();
+            //client.BaseAddress = new Uri("https://api.bimsync.com/v2/");
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
+
+            string query = "https://api.bimsync.com/v2/";
+            if (ressource.Contains("?"))
+            {
+                query = query + ressource + "&page=1&pageSize=1";
+            }
+            else
+            {
+                query = query + ressource + "?page=1&pageSize=1";
+            }
+            if (revision != null && revision != "") query = query + "&revision=" + revision;
+
+            HttpResponseMessage response = await client.GetAsync(query);
+
+            string responseString = await response.Content.ReadAsStringAsync();
+
+            response.EnsureSuccessStatusCode();
+
+            // parse response headers
+            KeyValuePair<string, IEnumerable<string>> link = response.Headers
+               .FirstOrDefault(q => string.Compare(q.Key, "Link", true) == 0);
+
+            if (link.Key == null) return 999;
+
+            string linkValue = link.Value.FirstOrDefault().ToString();
+            string[] values = linkValue.Split(',');
+            string url = values.FirstOrDefault(x => x.Contains("rel=\"last\""));
+
+            int pFrom = url.IndexOf("&page=") + "&page=".Length;
+            int pTo = 0;
+            if (url.IndexOf("&", pFrom) != -1)
+            {
+                pTo = url.IndexOf("&", pFrom);
+            }
+            else
+            {
+                pTo = url.IndexOf(">", pFrom);
+            }
+
+            if (pTo == 0) return 0;
+
+            String result = url.Substring(pFrom, pTo - pFrom);
+
+            return Convert.ToInt32(result);
         }
     }
 }

@@ -144,5 +144,69 @@ namespace bimsyncFunction
                 };
             }
         }
+
+        [FunctionName("get_page_number")]
+        public static async Task<HttpResponseMessage> Pages(
+    [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}/pages")]HttpRequest req,
+    [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString",
+                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+    [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
+    ILogger log)
+        {
+            log.LogInformation("Getting the number of pages");
+
+            if (users.Count() != 0)
+            {
+                User user = users.FirstOrDefault();
+                //Refrech the token if necessary
+                if (user.RefreshDate < DateTime.Now)
+                {
+                    bimsync.AccessToken accessToken = await bimsync.bimsyncServices.RefreshAccessToken(user.AccessToken.refresh_token);
+
+                    if (accessToken == null)
+                    {
+                        new HttpResponseMessage(HttpStatusCode.BadRequest)
+                        {
+                            Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
+                        };
+                    }
+
+                    user.AccessToken = accessToken;
+                    user.RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in);
+
+                    await usersOut.AddAsync(user);
+                }
+
+                string ressource = req.Query["ressource"];
+                string revision = req.Query["revision"];
+
+                Page page = new Page
+                {
+                    PageNumber = bimsync.bimsyncServices.GetPageNumber(ressource, revision, user.AccessToken.access_token).Result
+                };
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+            JsonConvert.SerializeObject(page),
+            Encoding.UTF8,
+            "application/json"
+            )
+                };
+            }
+            else
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(JsonConvert.SerializeObject("The user does not exist"), Encoding.UTF8, "application/json")
+                };
+            }
+        }
     }
 }
