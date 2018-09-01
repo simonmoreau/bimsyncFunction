@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -23,8 +24,14 @@ namespace bimsyncFunction
         [FunctionName("create_user")]
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "users")]HttpRequestMessage req,
-            [CosmosDB(databaseName: "bimsyncManagerdb", collectionName: "bimsyncManagerCollection", ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
-            //[CosmosDB(databaseName: "bimsyncManagerdb", collectionName: "bimsyncManagerCollection", ConnectionStringSetting = "myDBConnectionString")]DocumentClient client,
+            [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
+            [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString")]DocumentClient client,
             ILogger log)
         {
             log.LogInformation("Creating a new user");
@@ -36,54 +43,45 @@ namespace bimsyncFunction
             {
                 new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
-                    Content = new StringContent("Please pass an Authorisation Code in the request body", Encoding.UTF8, "application/json")
+                    Content = new StringContent(JsonConvert.SerializeObject("Please pass an Authorisation Code and a redirect URI in the request body"), Encoding.UTF8, "application/json")
                 };
             }
 
-            bimsync.AccessToken accessToken = await bimsync.bimsyncServices.GetAccessToken(authorisationCode.AuthorizationCode);
+            bimsync.AccessToken accessToken = await bimsync.bimsyncServices.GetAccessToken(authorisationCode);
 
             if (accessToken == null)
             {
                 new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
-                    Content = new StringContent("Could get an authorisation code from bimsync", Encoding.UTF8, "application/json")
+                    Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                 };
             }
 
             bimsync.User bimsyncUser = await bimsync.bimsyncServices.GetCurrentUser(accessToken);
 
+            Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bimsyncManagerdb", "bimsyncManagerCollection");
+            IEnumerable<User> existingUsers = client.CreateDocumentQuery<User>(collectionUri).Where(u => u.id == bimsyncUser.id).AsEnumerable();
+
+            string secret = System.Guid.NewGuid().ToString();
+            string bcfToken = "";
+            if (existingUsers.Count() != 0)
+            {
+                secret = existingUsers.FirstOrDefault().PowerBISecret;
+                bcfToken = existingUsers.FirstOrDefault().BCFToken;
+            }
+
+
             User user = new User
             {
                 id = bimsyncUser.id,
                 Name = bimsyncUser.name,
-                PowerBISecret = System.Guid.NewGuid().ToString(),
+                PowerBISecret = secret,
                 AccessToken = accessToken,
                 RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in),
-                BCFToken = ""
+                BCFToken = bcfToken
             };
 
             await usersOut.AddAsync(user);
-
-            // Uri collectionUri = UriFactory.CreateDocumentCollectionUri("mydb", "mycollection");
-
-            // IDocumentQuery<User> query = client.CreateDocumentQuery<User>(collectionUri)
-            //     .Where(u => u.Age >= minAge)
-            //     .AsDocumentQuery();
-
-            //BCFToken bcfAccessToken = ObtainBCFToken(codeBCF).Result;
-
-            //var user = _context.Users.FirstOrDefault(t => t.bimsync_id == bimsyncUser.id);
-            // User user = null;
-
-            // if (user == null)
-            // {
-
-            // }
-            // else
-            // {
-            //     user.AccessToken = accessToken;
-            //     user.RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in - 60);
-            // }
 
             string jsonContent = JsonConvert.SerializeObject(user);
 
@@ -94,25 +92,58 @@ namespace bimsyncFunction
 
         [FunctionName("get_user")]
         public static async Task<HttpResponseMessage> Get(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "users/{id:int?}")]HttpRequestMessage req, int? id,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "users/{secret}")]HttpRequestMessage req,
+            [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString",
+                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+            [CosmosDB(
+                databaseName: "bimsyncManagerdb",
+                collectionName: "bimsyncManagerCollection",
+                ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
             ILogger log)
         {
-            log.LogInformation("I am getting an existing user");
+            log.LogInformation("Getting an existing user");
 
-            if (id == null)
-                log.LogInformation("The id is missing");
+            if (users.Count() != 0)
+            {
+                User user = users.FirstOrDefault();
+                //Refrech the token if necessary
+                if (user.RefreshDate < DateTime.Now)
+                {
+                    bimsync.AccessToken accessToken = await bimsync.bimsyncServices.RefreshAccessToken(user.AccessToken.refresh_token);
+
+                    if (accessToken == null)
+                    {
+                        new HttpResponseMessage(HttpStatusCode.BadRequest)
+                        {
+                            Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
+                        };
+                    }
+
+                    user.AccessToken = accessToken;
+                    user.RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in);
+
+                    await usersOut.AddAsync(user);
+                }
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                            JsonConvert.SerializeObject(user),
+                            Encoding.UTF8,
+                            "application/json"
+                            )
+                };
+            }
             else
-                log.LogInformation("The id is" + id.ToString());
-
-            string name = "test";
-
-            // Get request body
-            //dynamic data = await req.Content.ReadAsAsync<object>();
-            //name = name ?? data?.name;
-
-            return name == null
-                ? new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("Please pass a name on the query string or in the request body", Encoding.UTF8, "application/json") }
-                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(name, Encoding.UTF8, "application/json") };
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(JsonConvert.SerializeObject("The user does not exist"), Encoding.UTF8, "application/json")
+                };
+            }
         }
     }
 }

@@ -11,15 +11,14 @@ namespace bimsyncFunction.bimsync
         // Create a single, static HttpClient
         private static HttpClient httpClient = new HttpClient();
 
-        public static async Task<AccessToken> GetAccessToken(string authorisationCode)
+        public static async Task<AccessToken> GetAccessToken(AuthorisationCode authorisationCode)
         {
-            string callbackUri = "https://www.getpostman.com/oauth2/callback";
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
             string bodyContent = $"grant_type=authorization_code" +
-                    $"&code={authorisationCode}" +
-                    $"&redirect_uri={callbackUri}" +
+                    $"&code={authorisationCode.AuthorizationCode}" +
+                    $"&redirect_uri={authorisationCode.RedirectURI}" +
                     $"&client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
                     $"&client_secret={Services.GetEnvironmentVariable("bimsync-secret")}";
 
@@ -45,8 +44,8 @@ namespace bimsyncFunction.bimsync
 
             string bodyContent = $"grant_type=refresh_token" +
                     $"&refresh_token={refresh_token}" +
-                    $"&client_id={Services.GetEnvironmentVariable("client_id")}" +
-                    $"&client_secret={Services.GetEnvironmentVariable("client_secret")}";
+                    $"&client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
+                    $"&client_secret={Services.GetEnvironmentVariable("bimsync-secret")}";
 
             HttpContent body = new StringContent(bodyContent, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
 
@@ -54,10 +53,36 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await client.PostAsync(clientURL, body);
 
+            response.EnsureSuccessStatusCode();
+
             string responseString = await response.Content.ReadAsStringAsync();
             AccessToken accessToken = (AccessToken)JsonConvert.DeserializeObject(responseString, typeof(AccessToken));
 
             return accessToken;
+        }
+
+        private async Task<BCFToken> GetBCFToken(string authorisationCode)
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+
+            string bodyContent = $"client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
+                    $"&client_secret={Services.GetEnvironmentVariable("bimsync-secret")}" +
+                    $"&code={authorisationCode}" +
+                    "&grant_type=authorization_code";
+
+            HttpContent body = new StringContent(bodyContent, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+
+            string clientURL = "https://api.bimsync.com/1.0/oauth/access_token";
+
+            HttpResponseMessage response = await client.PostAsync(clientURL, body);
+
+            response.EnsureSuccessStatusCode();
+
+            string responseString = await response.Content.ReadAsStringAsync();
+            BCFToken bcfToken = (BCFToken)JsonConvert.DeserializeObject(responseString, typeof(BCFToken));
+
+            return bcfToken;
         }
 
         public static async Task<bimsync.User> GetCurrentUser(AccessToken accessToken)
@@ -67,6 +92,8 @@ namespace bimsyncFunction.bimsync
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
             HttpResponseMessage response = await client.GetAsync("https://api.bimsync.com/v2/user");
+
+            response.EnsureSuccessStatusCode();
 
             string responseString = await response.Content.ReadAsStringAsync();
             bimsync.User bimsyncUser = (bimsync.User)JsonConvert.DeserializeObject(responseString, typeof(bimsync.User));

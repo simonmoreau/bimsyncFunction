@@ -13,5 +13,6 @@ namespace bimsyncFunction
     public class AuthorisationCode
     {
         public string AuthorizationCode {get;set;}
+        public string RedirectURI {get;set;}
     }
 }
