@@ -6,27 +6,25 @@ namespace bimsyncFunction
     public class SharingCode
     {
         public string id { get; set; }
+
+        public System.DateTime RefreshDate{get;set;}
+        public string UserId { get; set; }
         public bimsync.ViewerToken Viewer2dToken { get; set; }
         public bimsync.ViewerToken Viewer3dToken { get; set; }
-        public List<SharedModel> SharedModels { get; set; }
-        public List<string> spacesId {get;set;}
-    }
-
-    public class SharedModel
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
+        public List<bimsync.Model> SharedModels { get; set; }
+        public SharedRevisions SharedRevisions { get; set; }
+        public List<string> SpacesId {get;set;}
     }
 
     public class SharedRevisions
     {
-        public string projectId {get;set;}
-        public string[] revisions3D { get; set; }
-        public string revision2D { get; set; }
+        public string ProjectId {get;set;}
+        public string[] Revisions3D { get; set; }
+        public string Revision2D { get; set; }
     }
 
     public class SharedRevisions3D
     {
-        public string[] revisions { get; set; }
+        public string[] Revisions { get; set; }
     }
 }

@@ -63,7 +63,7 @@ namespace bimsyncFunction.bimsync
     public class Product
 {
     public string revisionId { get; set; }
-    public int objectId { get; set; }
+    public string objectId { get; set; }
     public string ifcType { get; set; }
     public object attributes { get; set; }
     public object type { get; set; }

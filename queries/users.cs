@@ -41,7 +41,7 @@ namespace bimsyncFunction
 
             if (authorisationCode == null)
             {
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(JsonConvert.SerializeObject("Please pass an Authorisation Code and a redirect URI in the request body"), Encoding.UTF8, "application/json")
                 };
@@ -51,7 +51,7 @@ namespace bimsyncFunction
 
             if (accessToken == null)
             {
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                 };
@@ -115,7 +115,7 @@ namespace bimsyncFunction
 
                     if (accessToken == null)
                     {
-                        new HttpResponseMessage(HttpStatusCode.BadRequest)
+                        return new HttpResponseMessage(HttpStatusCode.BadRequest)
                         {
                             Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                         };
@@ -171,7 +171,7 @@ ILogger log)
 
                 if (bcfToken == null)
                 {
-                    new HttpResponseMessage(HttpStatusCode.BadRequest)
+                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
                     {
                         Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                     };
@@ -225,7 +225,7 @@ ILogger log)
 
                     if (accessToken == null)
                     {
-                        new HttpResponseMessage(HttpStatusCode.BadRequest)
+                        return new HttpResponseMessage(HttpStatusCode.BadRequest)
                         {
                             Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                         };
@@ -263,23 +263,23 @@ ILogger log)
             }
         }
 
-                [FunctionName("ShareModel")]
-                        public static async Task<HttpResponseMessage> Share(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users/{secret}/share")]HttpRequestMessage req,
-            [CosmosDB(
+        [FunctionName("ShareModel")]
+        public static async Task<HttpResponseMessage> Share(
+    [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users/{secret}/share")]HttpRequestMessage req,
+    [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
                 SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
-            [CosmosDB(
+    [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
-            [CosmosDB(
+    [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<SharingCode> sharingCodesOut,
-            ILogger log)
+    ILogger log)
         {
             log.LogInformation("Create a shared model");
 
@@ -288,7 +288,7 @@ ILogger log)
 
             if (sharedRevisions == null)
             {
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(JsonConvert.SerializeObject("Please pass an array of revisions to be shared"), Encoding.UTF8, "application/json")
                 };
@@ -304,7 +304,7 @@ ILogger log)
 
                     if (accessToken == null)
                     {
-                        new HttpResponseMessage(HttpStatusCode.BadRequest)
+                        return new HttpResponseMessage(HttpStatusCode.BadRequest)
                         {
                             Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
                         };
@@ -316,19 +316,29 @@ ILogger log)
                     await usersOut.AddAsync(user);
                 }
 
-                bimsync.ViewerToken token2d = await bimsync.bimsyncServices.GetViewer2DToken(user.AccessToken,sharedRevisions.projectId,sharedRevisions.revision2D);
-                bimsync.ViewerToken token3d = await bimsync.bimsyncServices.GetViewer3DToken(user.AccessToken,sharedRevisions.projectId,sharedRevisions.revisions3D);
+                List<bimsync.Revision> revisions = await bimsync.bimsyncServices.GetRevisions(user.AccessToken, sharedRevisions.ProjectId);
+                List<bimsync.Model> sharedModels = revisions.Where(r => sharedRevisions.Revisions3D.Contains(r.id)).Select(o => o.model).ToList();
 
-                SharingCode sharingCode = new SharingCode {
-                    id = Guid.NewGuid().ToString(),
-                    Viewer2dToken = token2d,
-                    Viewer3dToken = token3d,
-                    
+                List<string> spacesIds = new List<string>();
+                foreach (string revision in sharedRevisions.Revisions3D)
+                {
+                    spacesIds.AddRange(await bimsync.bimsyncServices.GetSpacesIds(user.AccessToken, sharedRevisions.ProjectId, revision));
                 }
+
+                SharingCode sharingCode = await Services.CreateSharingCode(
+                    sharedRevisions,
+                    user,
+                    sharedModels,
+                    spacesIds,
+                    Guid.NewGuid().ToString()
+                );
+
+                await sharingCodesOut.AddAsync(sharingCode);
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(
-                            JsonConvert.SerializeObject(user),
+                            JsonConvert.SerializeObject(sharingCode),
                             Encoding.UTF8,
                             "application/json"
                             )

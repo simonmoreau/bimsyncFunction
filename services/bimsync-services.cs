@@ -152,6 +152,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<ViewerToken> GetViewer2DToken(AccessToken accessToken, string projectId, string revisionId)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
@@ -176,6 +177,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<ViewerToken> GetViewer3DToken(AccessToken accessToken, string projectId, string[] revisionId)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
@@ -184,7 +186,7 @@ namespace bimsyncFunction.bimsync
             HttpContent body = new StringContent("", System.Text.Encoding.UTF8, "application/json");
             if (revisionId.Count() != 0)// !string.IsNullOrEmpty(revisionId))
             {
-                SharedRevisions3D revisions = new SharedRevisions3D { revisions = revisionId };
+                SharedRevisions3D revisions = new SharedRevisions3D { Revisions = revisionId };
                 body = new StringContent(JsonConvert.SerializeObject(revisions), System.Text.Encoding.UTF8, "application/json");
             }
 
@@ -200,22 +202,51 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<string[]> GetSpacesIds(AccessToken accessToken, string projectId, string revision)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
             string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/ifc/products?pageSize=5000&revision={revision}";
 
-            HttpContent body = new StringContent("{'query':{'ifcType':{'$ifcType':'IfcSpace'}},'fields':{'revisionId':1,'ifcType':1,'type':1}}", System.Text.Encoding.UTF8, "application/json");
+            HttpContent body = new StringContent("{\"query\":{\"ifcType\":{\"$ifcType\":\"IfcSpace\"}},\"fields\":{\"revisionId\":1,\"ifcType\":1,\"type\":1}}", System.Text.Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
             response.EnsureSuccessStatusCode();
 
             string responseString = await response.Content.ReadAsStringAsync();
-            List<Product> products = (List<Product>)JsonConvert.DeserializeObject(responseString, typeof(List<Product>));
-            string[] ids = products.Select(o => o.objectId.ToString()).ToArray();
+            if (string.IsNullOrEmpty(responseString))
+            {
+                return new string[0];
+            }
+            else
+            {
+                List<Product> products = (List<Product>)JsonConvert.DeserializeObject(responseString, typeof(List<Product>));
+                string[] ids = products.Select(o => o.objectId).ToArray();
 
-            return ids;
+                return ids;
+            }
+
+        }
+
+        public static async Task<List<bimsync.Revision>> GetRevisions(AccessToken accessToken, string projectId)
+        {
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
+
+            string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/revisions?pageSize=1000";
+
+            HttpResponseMessage response = await httpClient.GetAsync(clientURL);
+
+            response.EnsureSuccessStatusCode();
+
+            string responseString = await response.Content.ReadAsStringAsync();
+
+            List<bimsync.Revision> revisions = (List<bimsync.Revision>)JsonConvert.DeserializeObject(responseString, typeof(List<bimsync.Revision>));
+
+            return revisions;
+
         }
 
     }
