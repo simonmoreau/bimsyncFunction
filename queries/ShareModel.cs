@@ -21,7 +21,7 @@ namespace bimsyncFunction
 {
     public static class ShareModel
     {
-        [FunctionName("get_shared_model")]
+        [FunctionName("get-shared-model")]
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/model/{id}")]HttpRequestMessage req,
             [CosmosDB(

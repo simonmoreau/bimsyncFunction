@@ -21,7 +21,7 @@ namespace bimsyncFunction
 {
     public static class users
     {
-        [FunctionName("create_user")]
+        [FunctionName("create-user")]
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users")]HttpRequestMessage req,
             [CosmosDB(
@@ -89,7 +89,7 @@ namespace bimsyncFunction
                 : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(jsonContent, Encoding.UTF8, "application/json") };
         }
 
-        [FunctionName("get_user")]
+        [FunctionName("get-user")]
         public static async Task<HttpResponseMessage> Get(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}")]HttpRequestMessage req,
             [CosmosDB(
@@ -145,7 +145,7 @@ namespace bimsyncFunction
             }
         }
 
-        [FunctionName("get_bcf_token")]
+        [FunctionName("get-bcf-token")]
         public static async Task<HttpResponseMessage> bcf(
 [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}/bcf")]HttpRequest req,
 [CosmosDB(
@@ -199,7 +199,7 @@ ILogger log)
             }
         }
 
-        [FunctionName("get_page_number")]
+        [FunctionName("get-page-number")]
         public static async Task<HttpResponseMessage> Pages(
     [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}/pages")]HttpRequest req,
     [CosmosDB(
@@ -263,7 +263,7 @@ ILogger log)
             }
         }
 
-        [FunctionName("ShareModel")]
+        [FunctionName("create-shared-model")]
         public static async Task<HttpResponseMessage> Share(
     [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users/{secret}/share")]HttpRequestMessage req,
     [CosmosDB(
