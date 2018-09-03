@@ -23,7 +23,7 @@ namespace bimsyncFunction
     {
         [FunctionName("create-user")]
         public static async Task<HttpResponseMessage> Create(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "manager/users")]HttpRequestMessage req,
             [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
@@ -91,7 +91,7 @@ namespace bimsyncFunction
 
         [FunctionName("get-user")]
         public static async Task<HttpResponseMessage> Get(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}")]HttpRequestMessage req,
             [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
@@ -147,7 +147,7 @@ namespace bimsyncFunction
 
         [FunctionName("get-bcf-token")]
         public static async Task<HttpResponseMessage> bcf(
-[HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}/bcf")]HttpRequest req,
+[HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}/bcf")]HttpRequest req,
 [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
@@ -201,7 +201,7 @@ ILogger log)
 
         [FunctionName("get-page-number")]
         public static async Task<HttpResponseMessage> Pages(
-    [HttpTrigger(AuthorizationLevel.Function, "get", Route = "api/users/{secret}/pages")]HttpRequest req,
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}/pages")]HttpRequest req,
     [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
@@ -265,7 +265,7 @@ ILogger log)
 
         [FunctionName("create-shared-model")]
         public static async Task<HttpResponseMessage> Share(
-    [HttpTrigger(AuthorizationLevel.Function, "post", Route = "api/users/{secret}/share")]HttpRequestMessage req,
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "manager/users/{secret}/share")]HttpRequestMessage req,
     [CosmosDB(
                 databaseName: "bimsyncManagerdb",
                 collectionName: "bimsyncManagerCollection",
