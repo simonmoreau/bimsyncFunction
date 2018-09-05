@@ -29,10 +29,17 @@ namespace bimsyncFunction.bimsync
             string clientURL = "https://api.bimsync.com/oauth2/token";
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
-
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             AccessToken accessToken = (AccessToken)JsonConvert.DeserializeObject(responseString, typeof(AccessToken));
 
             return accessToken;
@@ -54,9 +61,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             AccessToken accessToken = (AccessToken)JsonConvert.DeserializeObject(responseString, typeof(AccessToken));
 
             return accessToken;
@@ -77,9 +92,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             BCFToken bcfToken = (BCFToken)JsonConvert.DeserializeObject(responseString, typeof(BCFToken));
 
             return bcfToken;
@@ -92,9 +115,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.GetAsync("https://api.bimsync.com/v2/user");
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             bimsync.User bimsyncUser = (bimsync.User)JsonConvert.DeserializeObject(responseString, typeof(bimsync.User));
 
             return bimsyncUser;
@@ -120,7 +151,14 @@ namespace bimsyncFunction.bimsync
 
             string responseString = await response.Content.ReadAsStringAsync();
 
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
 
             // parse response headers
             KeyValuePair<string, IEnumerable<string>> link = response.Headers
@@ -167,9 +205,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             ViewerToken viewerToken = (ViewerToken)JsonConvert.DeserializeObject(responseString, typeof(ViewerToken));
 
             return viewerToken;
@@ -192,9 +238,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             ViewerToken viewerToken = (ViewerToken)JsonConvert.DeserializeObject(responseString, typeof(ViewerToken));
 
             return viewerToken;
@@ -212,9 +266,17 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
+
             if (string.IsNullOrEmpty(responseString))
             {
                 return new string[0];
@@ -239,9 +301,16 @@ namespace bimsyncFunction.bimsync
 
             HttpResponseMessage response = await httpClient.GetAsync(clientURL);
 
-            response.EnsureSuccessStatusCode();
-
             string responseString = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                throw new Exception(responseString);
+            }
 
             List<bimsync.Revision> revisions = (List<bimsync.Revision>)JsonConvert.DeserializeObject(responseString, typeof(List<bimsync.Revision>));
 

@@ -39,75 +39,83 @@ namespace bimsyncFunction
                 ConnectionStringSetting = "myDBConnectionString")]DocumentClient client,
            ILogger log)
         {
-            log.LogInformation("Get a shared model");
-
-            if (sharingCodes.Count() != 0)
+            try
             {
-                SharingCode sharingCode = sharingCodes.FirstOrDefault();
+                log.LogInformation("Get a shared model");
 
-                //Refrech the tokens if necessary
-                if (sharingCode.RefreshDate < DateTime.Now)
+                if (sharingCodes.Count() != 0)
                 {
-                    Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bimsyncManagerdb", "bimsyncManagerCollection");
-                    //Get the doc back as a Document so you have access to doc.SelfLink
-                    IEnumerable<Document> documentUsers = client.CreateDocumentQuery<Document>(collectionUri).Where(u => u.Id == sharingCode.UserId).AsEnumerable();
+                    SharingCode sharingCode = sharingCodes.FirstOrDefault();
 
-                    if (documentUsers.Count() == 0)
+                    //Refrech the tokens if necessary
+                    if (sharingCode.RefreshDate < DateTime.Now)
                     {
-                        return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                        {
-                            Content = new StringContent(JsonConvert.SerializeObject("Could not find the associate user"), Encoding.UTF8, "application/json")
-                        };
-                    }
+                        Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bimsyncManagerdb", "bimsyncManagerCollection");
+                        //Get the doc back as a Document so you have access to doc.SelfLink
+                        IEnumerable<Document> documentUsers = client.CreateDocumentQuery<Document>(collectionUri).Where(u => u.Id == sharingCode.UserId).AsEnumerable();
 
-                    User user = (dynamic)documentUsers.FirstOrDefault();
-
-                    //Refrech the token if necessary
-                    if (user.RefreshDate < DateTime.Now)
-                    {
-                        bimsync.AccessToken accessToken = await bimsync.bimsyncServices.RefreshAccessToken(user.AccessToken.refresh_token);
-
-                        if (accessToken == null)
+                        if (documentUsers.Count() == 0)
                         {
                             return new HttpResponseMessage(HttpStatusCode.BadRequest)
                             {
-                                Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
+                                Content = new StringContent(JsonConvert.SerializeObject("Could not find the associate user"), Encoding.UTF8, "application/json")
                             };
                         }
 
-                        user.AccessToken = accessToken;
-                        user.RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in);
+                        User user = (dynamic)documentUsers.FirstOrDefault();
 
-                        await client.ReplaceDocumentAsync(documentUsers.FirstOrDefault().SelfLink, user);
+                        //Refrech the token if necessary
+                        if (user.RefreshDate < DateTime.Now)
+                        {
+                            bimsync.AccessToken accessToken = await bimsync.bimsyncServices.RefreshAccessToken(user.AccessToken.refresh_token);
+
+                            if (accessToken == null)
+                            {
+                                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                                {
+                                    Content = new StringContent(JsonConvert.SerializeObject("Could not get an authorisation code from bimsync"), Encoding.UTF8, "application/json")
+                                };
+                            }
+
+                            user.AccessToken = accessToken;
+                            user.RefreshDate = System.DateTime.Now + new System.TimeSpan(0, 0, accessToken.expires_in);
+
+                            await client.ReplaceDocumentAsync(documentUsers.FirstOrDefault().SelfLink, user);
+                        }
+
+                        sharingCode = await Services.CreateSharingCode(
+                            sharingCode.SharedRevisions,
+                            user,
+                            sharingCode.SharedModels,
+                            sharingCode.SpacesId,
+                            sharingCode.id
+                        );
+
+                        await sharingCodesOut.AddAsync(sharingCode);
                     }
 
-                    sharingCode = await Services.CreateSharingCode(
-                        sharingCode.SharedRevisions,
-                        user,
-                        sharingCode.SharedModels,
-                        sharingCode.SpacesId,
-                        sharingCode.id
-                    );
-
-                    await sharingCodesOut.AddAsync(sharingCode);
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(
+                                JsonConvert.SerializeObject(sharingCode),
+                                Encoding.UTF8,
+                                "application/json"
+                                )
+                    };
                 }
-
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                else
                 {
-                    Content = new StringContent(
-                            JsonConvert.SerializeObject(sharingCode),
-                            Encoding.UTF8,
-                            "application/json"
-                            )
-                };
+                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                    {
+                        Content = new StringContent(JsonConvert.SerializeObject("The model does not exist or have not been shared"), Encoding.UTF8, "application/json")
+                    };
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent(JsonConvert.SerializeObject("The model does not exist or have not been shared"), Encoding.UTF8, "application/json")
-                };
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent(ex.Message, Encoding.UTF8, "application/json") };
             }
+
         }
     }
 }
