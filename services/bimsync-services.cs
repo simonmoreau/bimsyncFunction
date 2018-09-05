@@ -15,6 +15,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<AccessToken> GetAccessToken(AuthorisationCode authorisationCode)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
@@ -47,6 +48,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<AccessToken> RefreshAccessToken(string refresh_token)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
@@ -79,6 +81,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<BCFToken> GetBCFToken(string authorisationCode)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
 
             string bodyContent = $"client_id={Services.GetEnvironmentVariable("bimsync-client")}" +
@@ -110,6 +113,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<bimsync.User> GetCurrentUser(AccessToken accessToken)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken.access_token);
 
@@ -133,6 +137,7 @@ namespace bimsyncFunction.bimsync
 
         public static async Task<int> GetPageNumber(string ressource, string revision, string access_token)
         {
+            httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
 
