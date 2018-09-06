@@ -205,7 +205,8 @@ namespace bimsyncFunction.bimsync
 
             if (!string.IsNullOrEmpty(revisionId))
             {
-                clientURL = clientURL + $"?revision={revisionId}";
+                SharedRevisions2D revision = new SharedRevisions2D { revision = revisionId };
+                body = new StringContent(JsonConvert.SerializeObject(revision), System.Text.Encoding.UTF8, "application/json");
             }
 
             HttpResponseMessage response = await httpClient.PostAsync(clientURL, body);
@@ -226,7 +227,7 @@ namespace bimsyncFunction.bimsync
             return viewerToken;
         }
 
-        public static async Task<ViewerToken> GetViewer3DToken(AccessToken accessToken, string projectId, string[] revisionId)
+        public static async Task<ViewerToken> GetViewer3DToken(AccessToken accessToken, string projectId, string[] revisionsIds)
         {
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -235,9 +236,9 @@ namespace bimsyncFunction.bimsync
             string clientURL = $"https://api.bimsync.com/v2/projects/{projectId}/viewer3d/token";
 
             HttpContent body = new StringContent("", System.Text.Encoding.UTF8, "application/json");
-            if (revisionId.Count() != 0)// !string.IsNullOrEmpty(revisionId))
+            if (revisionsIds.Count() != 0)
             {
-                SharedRevisions3D revisions = new SharedRevisions3D { Revisions = revisionId };
+                SharedRevisions3D revisions = new SharedRevisions3D { revisions = revisionsIds };
                 body = new StringContent(JsonConvert.SerializeObject(revisions), System.Text.Encoding.UTF8, "application/json");
             }
 

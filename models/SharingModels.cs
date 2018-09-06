@@ -25,6 +25,11 @@ namespace bimsyncFunction
 
     public class SharedRevisions3D
     {
-        public string[] Revisions { get; set; }
+        public string[] revisions { get; set; }
+    }
+
+        public class SharedRevisions2D
+    {
+        public string revision { get; set; }
     }
 }
