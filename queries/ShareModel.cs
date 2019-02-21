@@ -52,7 +52,7 @@ namespace bimsyncFunction
                     {
                         Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bim42db", "bimsyncManagerCollection");
                         //Get the doc back as a Document so you have access to doc.SelfLink
-                        IEnumerable<Document> documentUsers = client.CreateDocumentQuery<Document>(collectionUri).Where(u => u.Id == sharingCode.UserId).AsEnumerable();
+                        IEnumerable<Document> documentUsers = client.CreateDocumentQuery<Document>(collectionUri,new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true }).Where(u => u.Id == sharingCode.UserId).AsEnumerable();
 
                         if (documentUsers.Count() == 0)
                         {

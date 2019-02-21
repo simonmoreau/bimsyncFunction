@@ -73,7 +73,7 @@ namespace bimsyncFunction
                 bimsync.User bimsyncUser = await bimsync.bimsyncServices.GetCurrentUser(accessToken);
 
                 Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bim42db", "bimsyncManagerCollection");
-                IEnumerable<User> existingUsers = client.CreateDocumentQuery<User>(collectionUri).Where(u => u.id == bimsyncUser.id).AsEnumerable();
+                IEnumerable<User> existingUsers = client.CreateDocumentQuery<User>(collectionUri,new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true }).Where(u => u.id == bimsyncUser.id).AsEnumerable();
 
                 string secret = System.Guid.NewGuid().ToString();
                 string bcfToken = "";
