@@ -25,11 +25,11 @@ namespace bimsyncFunction
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "manager/users")]HttpRequestMessage req,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]DocumentClient client,
             ILogger log)
@@ -61,7 +61,7 @@ namespace bimsyncFunction
 
                 bimsync.User bimsyncUser = await bimsync.bimsyncServices.GetCurrentUser(accessToken);
 
-                Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bimsyncManagerdb", "bimsyncManagerCollection");
+                Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bim42db", "bimsyncManagerCollection");
                 IEnumerable<User> existingUsers = client.CreateDocumentQuery<User>(collectionUri).Where(u => u.id == bimsyncUser.id).AsEnumerable();
 
                 string secret = System.Guid.NewGuid().ToString();
@@ -100,12 +100,12 @@ namespace bimsyncFunction
         public static async Task<HttpResponseMessage> Get(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}")]HttpRequestMessage req,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
-                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+                SqlQuery = "select * from bim42db u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
             ILogger log)
@@ -164,12 +164,12 @@ namespace bimsyncFunction
         public static async Task<HttpResponseMessage> bcf(
 [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}/bcf")]HttpRequest req,
 [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
-                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+                SqlQuery = "select * from bim42db u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
 [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
 ILogger log)
@@ -225,12 +225,12 @@ ILogger log)
         public static async Task<HttpResponseMessage> Pages(
     [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users/{secret}/pages")]HttpRequest req,
     [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
-                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+                SqlQuery = "select * from bim42db u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
     [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
     ILogger log)
@@ -298,16 +298,16 @@ ILogger log)
         public static async Task<HttpResponseMessage> Share(
     [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "manager/users/{secret}/share")]HttpRequestMessage req,
     [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
-                SqlQuery = "select * from bimsyncManagerdb u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
+                SqlQuery = "select * from bim42db u where u.PowerBISecret = {secret}")]IEnumerable<User> users,
     [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<User> usersOut,
     [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<SharingCode> sharingCodesOut,
     ILogger log)

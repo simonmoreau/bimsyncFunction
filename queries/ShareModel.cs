@@ -25,16 +25,16 @@ namespace bimsyncFunction
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/model/{id}")]HttpRequestMessage req,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString",
-                SqlQuery = "select * from bimsyncManagerdb u where u.id = {id}")]IEnumerable<SharingCode> sharingCodes,
+                SqlQuery = "select * from bim42db u where u.id = {id}")]IEnumerable<SharingCode> sharingCodes,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]IAsyncCollector<SharingCode> sharingCodesOut,
             [CosmosDB(
-                databaseName: "bimsyncManagerdb",
+                databaseName: "bim42db",
                 collectionName: "bimsyncManagerCollection",
                 ConnectionStringSetting = "myDBConnectionString")]DocumentClient client,
            ILogger log)
@@ -50,7 +50,7 @@ namespace bimsyncFunction
                     //Refrech the tokens if necessary
                     if (sharingCode.RefreshDate < DateTime.Now)
                     {
-                        Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bimsyncManagerdb", "bimsyncManagerCollection");
+                        Uri collectionUri = UriFactory.CreateDocumentCollectionUri("bim42db", "bimsyncManagerCollection");
                         //Get the doc back as a Document so you have access to doc.SelfLink
                         IEnumerable<Document> documentUsers = client.CreateDocumentQuery<Document>(collectionUri).Where(u => u.Id == sharingCode.UserId).AsEnumerable();
 
