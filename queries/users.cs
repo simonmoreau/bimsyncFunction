@@ -21,6 +21,17 @@ namespace bimsyncFunction
 {
     public static class users
     {
+        [FunctionName("user-root")]
+        public static HttpResponseMessage Root([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users")]HttpRequest req, TraceWriter log)
+        {
+            log.Info("C# HTTP trigger function processed a request.");
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonConvert.SerializeObject("Welcome to the bimsyncManager API"), Encoding.UTF8, "application/json")
+            };
+        }
+
         [FunctionName("create-user")]
         public static async Task<HttpResponseMessage> Create(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "manager/users")]HttpRequestMessage req,
