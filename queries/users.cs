@@ -22,9 +22,9 @@ namespace bimsyncFunction
     public static class users
     {
         [FunctionName("user-root")]
-        public static HttpResponseMessage Root([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users")]HttpRequest req, TraceWriter log)
+        public static HttpResponseMessage Root([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "manager/users")]HttpRequest req, ILogger log)
         {
-            log.Info("C# HTTP trigger function processed a request.");
+            log.LogInformation("C# HTTP trigger function processed a request.");
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
